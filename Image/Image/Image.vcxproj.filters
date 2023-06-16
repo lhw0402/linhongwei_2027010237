@@ -45,6 +45,9 @@
     <ClInclude Include="ImageAPI.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="IIpcCallback.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Image.cpp">

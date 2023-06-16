@@ -1,7 +1,6 @@
 ﻿
 // ImageDlg.cpp: 实现文件
 //
-
 #include "pch.h"
 #include "framework.h"
 #include "Image.h"
@@ -9,11 +8,20 @@
 #include "afxdialogex.h"
 #include <string>
 #include <afxwin.h>
+#include <winsock2.h>  
+#include <ws2tcpip.h>
+#include <iostream>
+#include "ImageSocket.h"
+#include "include/json/json.h"
+#include <string>
+#include <iostream>
 
+using namespace std;
+#define BUFFSIZE	
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
-
+#pragma warning(disable:4996)
 
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
 
@@ -22,15 +30,15 @@ class CAboutDlg : public CDialogEx
 public:
 	CAboutDlg();
 
-// 对话框数据
+	// 对话框数据
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_ABOUTBOX };
 #endif
 
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持
 
-// 实现
+	// 实现
 protected:
 	DECLARE_MESSAGE_MAP()
 };
@@ -67,11 +75,11 @@ BEGIN_MESSAGE_MAP(CImageDlg, CDialogEx)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
-	ON_BN_CLICKED(IDC_BUTTON1, &CImageDlg::OnBnClickedButtonSingle)
-	ON_BN_CLICKED(IDC_BUTTON2, &CImageDlg::OnBnClickedButtonDir)
+	ON_BN_CLICKED(IDC_BUTTON_SINGLE, &CImageDlg::OnBnClickedButtonSingle)
+	ON_BN_CLICKED(IDC_BUTTON_DIR, &CImageDlg::OnBnClickedButtonDir)
 	ON_EN_CHANGE(IDC_EDIT_INPUT, &CImageDlg::OnEnChangeEditInput)
-	ON_BN_CLICKED(IDC_BUTTON3, &CImageDlg::OnBnClickedButton3)
-	ON_EN_CHANGE(IDC_EDIT3, &CImageDlg::OnEnChangeEdit3)
+	ON_BN_CLICKED(IDC_BUTTON_START, &CImageDlg::OnBnClickedButtonStart)
+	ON_EN_CHANGE(IDC_EDIT_RESULT, &CImageDlg::OnEnChangeEditResult)
 END_MESSAGE_MAP()
 
 
@@ -107,6 +115,9 @@ BOOL CImageDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO: 在此添加额外的初始化代码
+
+	ImageSocket::GetInstance()->SetPacketReceiver(this);
+	ImageSocket::GetInstance()->Start("127.0.0.1", 35000);
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -207,29 +218,47 @@ void CImageDlg::OnBnClickedButtonDir()
 	}
 }
 
-
 void CImageDlg::OnEnChangeEditInput()
 {
 	// TODO:  如果该控件是 RICHEDIT 控件，它将不
 	// 发送此通知，除非重写 CDialogEx::OnInitDialog()
 	// 函数并调用 CRichEditCtrl().SetEventMask()，
 	// 同时将 ENM_CHANGE 标志“或”运算到掩码中。
-
 	// TODO:  在此添加控件通知处理程序代码
 }
 
 
-void CImageDlg::OnBnClickedButton3()
-{
-	// TODO: 在此添加控件通知处理程序代码
-	CString  strSourceDir;
-	CEdit* pEditSourceDir = (CEdit*)GetDlgItem(IDC_EDIT_INPUT);
-	if (pEditSourceDir)
-	{
-		pEditSourceDir->GetWindowText(strSourceDir);
-	}
-}
 
+void CImageDlg::OnBnClickedButtonStart()
+{
+	Json::Value vRoot;
+	Json::Value vEducation;
+	CString address;
+	GetDlgItem(IDC_EDIT_INPUT)->GetWindowTextW(address);
+	std::string str = CT2A(address.GetString());
+	vEducation["path"] = str;
+	//vEducation["path"] = "D:\\0_KCA25G_Line_3_20220413221335_ZL007_7_LKN.jpg";
+	vEducation["index"] = "0";
+	vRoot["type"] = "classify";
+	vRoot["params"] = vEducation;
+	string strRoot = vRoot.toStyledString();
+	//SOCKET sockClient = socket(AF_INET, SOCK_STREAM, 0);
+	//SOCKADDR_IN addrSrv;
+	//addrSrv.sin_addr.S_un.S_addr = inet_addr("127.0.0.1");//案例服务器和客户端都在本地，固可以使用本地回路地址127.0.0.1
+	//addrSrv.sin_family = AF_INET;
+	//addrSrv.sin_port = htons(35000);
+	//connect(sockClient, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
+	/*SOCKET clientSocket = socket(AF_INET, SOCK_STREAM, 0);*/
+
+	char* pData = new char[strRoot.length()];
+	memset(pData, 0, strRoot.length());
+	memcpy(pData, strRoot.c_str(), strRoot.length());
+	ImageSocket::GetInstance()->SendPacket(pData, strRoot.length());	
+	//char receiveBuf[BUFFSIZE + 1];
+//memset(receiveBuf, 0, sizeof(receiveBuf));
+
+
+}
 
 void CImageDlg::OnEnChangeEdit3()
 {
@@ -239,4 +268,33 @@ void CImageDlg::OnEnChangeEdit3()
 	// 同时将 ENM_CHANGE 标志“或”运算到掩码中。
 
 	// TODO:  在此添加控件通知处理程序代码
+}
+
+void CImageDlg::OnEnChangeEditResult()
+{
+	// TODO:  如果该控件是 RICHEDIT 控件，它将不
+	// 发送此通知，除非重写 CDialogEx::OnInitDialog()
+	// 函数并调用 CRichEditCtrl().SetEventMask()，
+	// 同时将 ENM_CHANGE 标志“或”运算到掩码中。
+
+	// TODO:  在此添加控件通知处理程序代码
+}
+
+void CImageDlg::OnDataCallback(char* pData, DWORD dwLength)
+{
+	string strData(pData, dwLength);
+	Json::Reader reader;
+	Json::Value vRoot;
+
+	if (!reader.parse(strData, vRoot))
+	{
+		return;
+	}
+
+	string strClass = vRoot["class"].asString();
+
+	CString res;
+	//res = strRoot.c_str();
+	res.Format(_T("%s"), strClass.c_str());
+	GetDlgItem(IDC_EDIT_RESULT)->SetWindowTextW(res);
 }

@@ -84,7 +84,7 @@ void ImageSocket::Stop()
 	}
 }
 
-void ImageSocket::SetPacketReceiver(Callback* pReceiver)
+void ImageSocket::SetPacketReceiver(IIpcCallback* pReceiver)
 {
 	m_pPacketpReceiver = pReceiver;
 
@@ -121,14 +121,12 @@ void ImageSocket::ClientListenThread()
 		Sleep(500);
 	}
 	cout << "connect server success" << endl;
-
 	//ÊÕ°ü
 	char receiveBuf[BUFFSIZE + 1];
 	while (!m_bExit)
 	{
 		memset(receiveBuf, 0, sizeof(receiveBuf));
 		nRet = recv(m_clientSocket, receiveBuf, BUFFSIZE + 1, 0);
-
 		if (nRet > 0)
 		{
 			cout << "recv data length:" << nRet << ", " << receiveBuf << endl;
@@ -142,7 +140,6 @@ void ImageSocket::ClientListenThread()
 		}
 	}
 	cout << "Thread Exit" << endl;
-
 }
 
 
@@ -154,7 +151,7 @@ void ImageSocket::AddTcpPakcet(char* pData, DWORD dwLength)
 
 	packet.pData = (char*)malloc(dwLength);
 
-	memcpy(packet.pData, pData, dwLength);
+	memcpy((void*)packet.pData, pData, dwLength);
 
 	packet.dwDataLength = dwLength;
 	m_vecTcpPacket.push_back(packet);

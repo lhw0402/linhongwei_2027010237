@@ -3,10 +3,10 @@
 //
 
 #pragma once
-
+#include "IIpcCallback.h"
 
 // CImageDlg 对话框
-class CImageDlg : public CDialogEx
+class CImageDlg : public CDialogEx, IIpcCallback
 {
 // 构造
 public:
@@ -35,10 +35,12 @@ public:
 	afx_msg void OnBnClickedButtonSingle();
 	afx_msg void OnBnClickedButtonDir();
 	afx_msg void OnEnChangeEditInput();
-	afx_msg void OnBnClickedButton3();
+	afx_msg void OnBnClickedButtonStart();
+	afx_msg void OnEnChangeEdit3();
+	virtual void OnDataCallback(char* pData, DWORD dwLength) override;
 private:
 	CFont m_oFont;
-	
+
 public:
-	afx_msg void OnEnChangeEdit3();
+	afx_msg void OnEnChangeEditResult();
 };
